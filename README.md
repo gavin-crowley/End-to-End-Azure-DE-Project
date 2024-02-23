@@ -7,7 +7,7 @@ This project demonstrates an end-to-end Azure data engineering solution, startin
 This project serves as a learning opportunity for common data engineering practices, focusing on ETL pipeline techniques. The skills sharpened here are valuable for small to medium-sized businesses aiming to migrate their local data to the cloud.
 
 
-![Insert Image](https://github.com/gavin-crowley/End-to-End-Azure-DE/blob/main/images/pipeline.png)
+![Insert Image](https://github.com/gavin-crowley/End-to-End-Azure-DE-Project/blob/main/images/pipeline.png)
 
 ## Current Environment
 
@@ -29,7 +29,7 @@ Data ingestion from the on-premises SQL server to Azure SQL is accomplished via 
 3. Setting up a copy pipeline to transfer all tables from the local SQL server to the Azure Data Lake's "bronze" folder.
 
 
-![Azure DataFactory](https://github.com/gavin-crowley/End-to-End-Azure-DE/blob/main/images/adf.png)
+![Azure DataFactory](https://github.com/gavin-crowley/End-to-End-Azure-DE-Project/blob/main/images/adf.png)
 
 
 
@@ -43,11 +43,11 @@ Azure Databricks, using PySpark, is used for these transformations. Data initial
 2. Transform data from "bronze" to "silver" layer.
 3. Further transform data from "silver" to "gold" layer.
 
-![Databricks Notebooks](https://github.com/gavin-crowley/End-to-End-Azure-DE/blob/main/images/transformation.gif)
+![Databricks Notebooks](https://github.com/gavin-crowley/End-to-End-Azure-DE-Project/blob/main/images/transformation.gif)
 
 Azure Data Factory is updated to execute the "bronze" to "silver" and "silver" to "gold" notebooks automatically with each pipeline run.
 
-![Completed Pipeline](https://github.com/gavin-crowley/End-to-End-Azure-DE/blob/main/images/2-transformation.png)
+![Completed Pipeline](https://github.com/gavin-crowley/End-to-End-Azure-DE-Project/blob/main/images/2-transformation.png)
 
 
 ## 3: Data Loading
@@ -58,14 +58,14 @@ Data from the "gold" folder is loaded into the Business Intelligence reporting a
 2. Writing stored procedures to extract table information as a SQL view.
 3. Storing views within a server-less SQL Database in Synapse.
 
-![image](https://github.com/gavin-crowley/End-to-End-Azure-DE/blob/main/images/synapse.png)
+![image](https://github.com/gavin-crowley/End-to-End-Azure-DE-Project/blob/main/images/synapse.png)
 
 
 ## 4: Data Reporting
 
 Power BI connects directly to the cloud pipeline using DirectQuery to dynamically update the database. A Power BI report is developed to visualize AdventureWorks dataset data, including sales, product information, and customer gender.
 
-![power bi gif](https://github.com/gavin-crowley/End-to-End-Azure-DE/blob/main/images/powerbi.gif)
+![power bi gif](https://github.com/gavin-crowley/End-to-End-Azure-DE-Project/blob/main/images/powerbi.gif)
 
 
 
@@ -73,7 +73,7 @@ Power BI connects directly to the cloud pipeline using DirectQuery to dynamicall
 
 To verify the end-to-end pipeline, two new customers are added to the local SQL database server. If successful, the pipeline will update, and the Power BI report will dynamically show the new data. The total number of customers should increase from 847 to 849.
 
-![completed](https://github.com/gavin-crowley/End-to-End-Azure-DE/blob/main/images/test-pipeline.png)  
+![completed](https://github.com/gavin-crowley/End-to-End-Azure-DE-Project/blob/main/images/test-pipeline.png)  
 Great success!
 
 
