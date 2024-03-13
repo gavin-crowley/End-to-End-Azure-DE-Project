@@ -1,0 +1,213 @@
+Mr K DE Project Azure Databricks etc.
+
+€184.67
+€182.99 / €2.22 
+€182.83 / €2.38 
+€182.22 / €2.99
+181.39 / 2.99
+181.39 / 3.00
+181.37 
+180.83
+
+To do:
+what are common databricks transformations on a relational database?
+do pyspark questions to find transformations
+
+do an incremental data loading version of project next
+---------------
+
+OVERVIEW
+-Common usecase: migrate on-prem MSSQL DB
+-Use ADF (ETL tool mainly used for data ingestion) to copy all tables from DB and move to cloud
+-Tables will be stored in cloud in Az Data Lake Gen2
+-Will then use Az Databricks to transform the data
+-Lakehouse architecture used (bronze, silver, gold layers)
+-Bronze layer -> source of truth, exact copy of data at source
+-Then connect AzDB to bronze layer and do tranformation and load transformed data into Silver layer
+-Common bronze->silver transf -> ( change column names/datatypes)
+-Then silver -> gold transf - final cleaned curated data
+-Synapse, similar to MSSQL on cloud, load gold layer into these cloud db tables
+-Synapse -> Power BI
+-Security & Governance -> Az Active Directory (identity access management), Az Key Vault 
+-Whole pipeline is automated
+
+---------------
+
+PART 1: Environment setup
+
+main resource group: rg-mrk-de-project
+
+datasource: mssql
+
+SSMS:
+Sql Server Authentication:
+mrk
+Mind....41-
+
+sa
+Mind....44-
+
+setup username/password in keyvault -> now encrypted
+
+---------------
+
+PART 2: Data Ingestion
+MSSQL -> ADF: use Integration Runtime to establish connection
+-> install SHIR on local database device
+
+AutoResolveIntegrationRuntime: connects cloud to cloud services, e.g. ADF -> ADL
+
+Copy tables from MSSQL (source) -> ADL (sink) with ADF:
+Author > Pipelines
+
+Access policies not available.
+The access configuration for this key vault is set to role-based access control. To add or manage your access policies, go to the Access control (IAM) page.
+FIX: https://stackoverflow.com/questions/76325987/access-policies-not-available
+
+create source
+create sink
+move Address table to datalake
+
+repeat for all 10 tables
+create sql script to list all tables: getschema.sql
+use that script in ADF to grab all tables
+
+
+Azure Data Lake:
+his details at 39:06 in vid
+
+Synapse workspace:
+DLSG2:
+account name: mrkdatalakegen2gc
+file system name: fs-mrk-gc
+SQL Server admin login: sqladminuser, pw: Min...41-
+
+--------------------------------------
+
+PART 3: Data Transformation
+
+-create spark cluster
+-make sure azdb has access to adl -> Enable passthrough checked
+(azure data lake gen 2 blob storage, need to create a container to create a blob)
+
+give adf storage blob contributor access
+
+https://learn.microsoft.com/en-us/azure/databricks/archive/credential-passthrough/adls-passthrough
+
+-mount the data lake: storagemount notebook
+-use bronze mount point, do first transf and load to silver container using silver mount point
+-read data from silver container, do further transf and load to gold layer using gold mount point
+
+data is structured so needs minimal transf
+
+
+Transformation 1: convert data/time format to date
+-any col with date in title then convert from date/time to date format
+
+_delta_log does version tracking
+
+Silver transf generally joining multiple tables together, doing some aggregation, creating facts/dimensions for warehousing, but we'll be doing a simple transf
+
+Transformation 2 (Silver to Gold):
+-separate pascal case column names with underscore
+
+Now use ADF pipelines to run notebooks as jobs
+update copy_all_tables pipeline to include the databricks notebook
+To establish connection between azdb and adf create a linked service connection
+
+%sql - magic command
+
+databricks - adf token:
+dapi8afc50acbcd448899b876f4abe8bba26
+
+-----------------------------------------------
+
+PART 4: Data Loading - Synapse
+
+Synapse config on vid @ 1:52:09
+
+Synapse is like ADF + Az DBricks
+
+(a dedicated SQL pool represents a collection of analytic resources that are provisioned while using Synapse)
+
+Serverless SQL DB: 
+    - smaller workloads
+    - cannot pause decicated sql pool
+    - just using compute (uses data lake as storage)
+    
+Dedicated SQL DB: using compute + storage
+    - higher workloads
+    - can pause decicated sql pool
+    - using both compute and storage (data must be loaded into sql pool)
+
+-create az sql db : gold_db
+-will be using serverless sql pool to query data from data lake
+-data in gold layer is in delta format
+-create a view in the sql serverless db for address table
+-create pipeline to create views for all tables using synapse
+-to create pipeline we need to create stored procedure with parameters which can dynamically create the views with data from the gold container
+-create pipelines to use the sp to make the views
+-create linked service connection to connect to serverless sql db
+-once views created any change in data lake will be mirrored in views, but if db schema changes the synapse pipeline will need to be re-run
+
+-now use power bi to connect to gold_db and fetch all the views
+
+PART 5: Data Reporting
+
+get data > Azure > Azure Synapse Analytics (SQL DW)
+
+
+
+server endpoint: synapse url (synapse workspace>Properties>Serverless SQL endpoint)
+(synw-mrk-demo-01-gc-ondemand.sql.azuresynapse.net)
+database: gold_db
+
+
+PART 6: End to End Pipeline Testing
+----------------------------------------------
+MISC
+
+Fix:
+Azure Keyvault: The operation is not allowed by RBAC.
+https://learn.microsoft.com/en-us/answers/questions/1370440/azure-keyvault-the-operation-is-not-allowed-by-rba
+
+C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\Backup
+
+
+If the database being restored does not exist, the user must have CREATE DATABASE permissions to be able to successfully restore the database. If the database exists, RESTORE permissions default to members of the sysadmin and dbcreator fixed server roles and the owner (dbo) of the database.
+https://learn.microsoft.com/en-us/sql/relational-databases/backup-restore/restore-database-general-page?view=sql-server-ver16
+
+
+@{concat('SELECT * FROM ', item().SchemaName, '.', item().TableName)}
+
+bronze/SalesLT/Address/Address.parquet
+
+@{concat(dataset().schemaname, '/', dataset().tablename)}
+@{concat(dataset().tablename,'.parquet')}
+
+
+=========================
+
+March 12 REDO
+
+original resource list:
+main resource group: rg-mrk-de-project
+kv-mrk-demo-001-gc
+adf-mrk-demo-001-gc
+mrkdatalakegen2gc
+dbw-mrk-demo-001
+synw-mrk-demo-01-gc
+
+original resource list:
+rg-gavazade
+kv-gavazade
+adf-gavazade
+datalakegen2-gavazade
+dbw-gavazade
+synw-gavazade
+
+
+
+
+
+
