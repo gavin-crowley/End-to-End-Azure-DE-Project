@@ -118,7 +118,7 @@ To establish connection between azdb and adf create a linked service connection
 %sql - magic command
 
 databricks - adf token:
-dapi8afc50acbcd448899b876f4abe8bba26
+
 
 -----------------------------------------------
 
